@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorial</title>
+  <style>
+    body {
+      margin: 0;
+    }
+    canvas {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <script src="../three.js"></script>
+  <script src="../OrbitControls.js"></script>
+  <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+  <script>
+    // import { GLTFLoader } from 'https://threejs.org/examples/js/loaders/GLTFLoader.js';
+    // Global variables
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    let renderer = new THREE.WebGLRenderer({antialias: true});
+    let loader = new THREE.GLTFLoader();
+    let speed = 0;
+    let rotation_speed = 0.07;
+    let acceleration = 0.005;
+    let topSpeed = 0.1;
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor( 0xffffff, 1);
+    document.body.appendChild(renderer.domElement);
+
+    // Position camera;
+    camera.position.z = 7;
+    camera.position.y = 10;
+
+    // Load realistic lighting
+    directionalLight = new THREE.DirectionalLight(0xffff, 100);
+    directionalLight.position.set(0, 1, 0);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    light = new THREE.PointLight(0xc4c4c4, 10);
+    light.position.set(0, 300, 500);
+    scene.add(light);
+
+    // Draw plane
+    var geometry = new THREE.PlaneGeometry( 12, 8, 8);
+    var material = new THREE.MeshBasicMaterial( {color: '#FFEAB3', side: THREE.DoubleSide} );
+    var plane = new THREE.Mesh( geometry, material );
+    scene.add( plane );
+    // plane.position.z = -10;
+    // plane.position.y = 0;
+    plane.rotateX(-Math.PI * 0.5);
+
+    // Draw box
+    /*
+    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    var cube = new THREE.Mesh( geometry, material );
+    scene.add( cube );
+    cube.position.z = -10;
+    cube.position.y = -1.5; */
+
+    // Draw tank  
+    let tank = new THREE.Object3D();
+    loader.load(
+      // resource URL
+      'tutorial/models/simple_tank/scene.gltf',
+      // called when the resource is loaded
+      function ( gltf ) {
+        tank = gltf.scene.children[0];
+        tank.scale.set(0.05, 0.05, 0.05);
+        scene.add( gltf.scene );
+        gltf.animations; // Array<THREE.AnimationClip>
+        gltf.scene; // THREE.Group
+        gltf.scenes; // Array<THREE.Group>
+        gltf.cameras; // Array<THREE.Camera>
+        gltf.asset; // Object
+      },
+      // called while loading is progressing
+      function ( xhr ) {
+        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+      },
+      // called when loading has errors
+      function ( error ) {
+        console.log( 'An error happened' );
+      }
+    );
+
+    // Orbit controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target = new THREE.Vector3(0, 0, -10);
+    controls.addEventListener('change', render);
+
+    // Player controls
+    let w, a, s, d;
+    onkeydown = function(event){
+      let key = event.key;
+      if (key === "w"){
+        w = 1;
+      } else if (key === "s"){
+        s = 1;
+      } else if (key === "a"){
+        a = 1;
+      } else if (key === "d"){
+        d = 1;
+      }
+    };
+
+    onkeyup = function(event){
+      let key = event.key;
+      if (key === "w"){
+        w = 0;
+      } else if (key === "a"){
+        a = 0;
+      } else if (key === "s"){
+        s = 0;
+      } else if (key === "d"){
+        d = 0;
+      }
+    };
+
+    function lerp(val, end){
+      if (val < end){
+        val += acceleration;
+      } else if (val > end){
+        val -= acceleration;
+      }
+      return val;
+    }
+
+    function move(force_vector){
+      tank.position.x -= force_vector.x * speed;
+      tank.position.z -= force_vector.z * speed;
+    }
+
+    function cubeControls(){
+      let rotation = new THREE.Matrix4().extractRotation(tank.matrix);
+      let force_vector = new THREE.Vector3(0, 1, 0).applyMatrix4(rotation);
+      
+      // Cube movement
+      if (w === 1){
+        speed = lerp(speed, topSpeed);
+
+      } else if (speed > 0 && s != 1){
+        speed = lerp(speed, -topSpeed);
+      }
+      if (a === 1){
+        tank.rotation.z += rotation_speed;
+      } 
+      if (s === 1){
+        speed = lerp(speed, -topSpeed);
+      } 
+      else if (speed < 0 && w != 1){
+        speed = lerp(speed, topSpeed);
+      }
+      if (d === 1){
+        tank.rotation.z -= rotation_speed;
+      }
+      move(force_vector);
+
+      // Ensures speed is a clean number
+      if (Math.abs(speed) < acceleration){
+        speed = 0;
+      } else if (speed > topSpeed){
+        speed = topSpeed;
+      } else if (speed < -topSpeed){
+        speed = -topSpeed;
+      }
+    }
+
+    // Game logic
+    function update(){
+      cubeControls();
+    }
+
+    // Draw scene
+    function render(){
+      renderer.render(scene, camera);
+    }
+
+    // Run game loop (update, render, repeat)
+    function gameloop(){
+      requestAnimationFrame(gameloop);
+      update();
+      render();
+    }
+
+    gameloop();
+  </script>
+</body>
+</html>
