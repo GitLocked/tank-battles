@@ -19,7 +19,6 @@
   <script src="../OrbitControls.js"></script>
   <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
   <script>
-    // import { GLTFLoader } from 'https://threejs.org/examples/js/loaders/GLTFLoader.js';
     // Global variables
     let scene = new THREE.Scene();
     let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -35,24 +34,37 @@
     let game_board_height = 5;
     let start_x = -game_board_width;
     let start_y = -game_board_height;
+    let tank = new THREE.Object3D();
+    const floor = new THREE.TextureLoader().load('tank-battles/textures/iron_block.png');
+    let square = new THREE.PlaneGeometry(1, 1, 1);
+    let material = new THREE.MeshBasicMaterial({map: floor, side: THREE.DoubleSide});
+    let plane = new THREE.Mesh(square, material);
+    let squares = [];
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor( 0xffffff, 1);
-    document.body.appendChild(renderer.domElement);
+    function init(){
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor( 0xffffff, 1);
+      document.body.appendChild(renderer.domElement);
 
-    // Position camera;
-    camera.position.z = 7;
-    camera.position.y = 10;
+      // Position camera;
+      camera.position.z = 7;
+      camera.position.y = 10;
 
-    // Load realistic lighting
-    directionalLight = new THREE.DirectionalLight(0xffff, 1);
-    directionalLight.position.set(0, 1, 0);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
+      // Load realistic lighting
+      directionalLight = new THREE.DirectionalLight(0xffff, 1);
+      directionalLight.position.set(0, 1, 0);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
 
-    light = new THREE.PointLight(0xc4c4c4, 10);
-    light.position.set(0, 300, 500);
-    scene.add(light);
+      light = new THREE.PointLight(0xc4c4c4, 10);
+      light.position.set(0, 300, 500);
+      scene.add(light);
+    }
+
+
+
+
+
 
     // Draw bullet
     function drawBullet(){
@@ -76,23 +88,7 @@
       bullet.position.z -= bullet.force_vector.z * bulletSpeed;
     }
 
-    // Draw plane
-    /*
-    var geometry = new THREE.PlaneGeometry( 12, 8, 8);
-    var material = new THREE.MeshBasicMaterial( {color: '#FFEAB3', side: THREE.DoubleSide} );
-    var plane = new THREE.Mesh( geometry, material );
-    scene.add( plane );
-    plane.rotateX(-Math.PI * 0.5); 
-    */
-
     // Draw grid
-    const floor = new THREE.TextureLoader().load('tank-battles/textures/iron_block.png');
-    let square = new THREE.PlaneGeometry(1, 1, 1);
-    let material = new THREE.MeshBasicMaterial({map: floor, side: THREE.DoubleSide});
-    let plane = new THREE.Mesh(square, material);
-    // let merged_squares = new THREE.BufferGeometry();
-    // let merged_squares = new THREE.InstancedMesh();
-    let squares = [];
     for(x = start_x; x < game_board_width; x++){
       for(y = start_y; y < game_board_height; y++){
         let new_square = plane.clone();
@@ -101,21 +97,10 @@
         new_square.position.x = x;
         new_square.position.z = y;
         new_square.rotateX(-Math.PI * 0.5);
-       // merged_squares.push(new_square);
       }
     }
 
-    // scene.add(plane);
-    // plane.rotateX(-Math.PI * 0.5); 
-    // plane.position.x = x;
-    // plane.position.z = y;
-    /*
-    grid = new THREE.GridHelper(12, 8, 8);
-    scene.add(grid);
-    */
-
     // Draw tank  
-    let tank = new THREE.Object3D();
     loader.load(
       // resource URL
       'tank-battles/models/low-poly_tank/scene.gltf',
@@ -226,6 +211,13 @@
       }
     }
 
+    // Window resize
+    function onWindowResize(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
     // Game logic
     function update(){
       cubeControls();
@@ -238,18 +230,13 @@
       renderer.render(scene, camera);
     }
 
-    function onWindowResize(){
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
     // Run game loop (update, render, repeat)
     function gameloop(){
       requestAnimationFrame(gameloop);
       update();
       render();
     }
+    init();
     gameloop();
 
     window.addEventListener('resize', onWindowResize, false);
