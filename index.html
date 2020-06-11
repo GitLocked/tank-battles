@@ -31,6 +31,10 @@
     let topSpeed = 0.1;
     let bullets = [];
     let bulletSpeed = 0.2;
+    let game_board_width = 5;
+    let game_board_height = 5;
+    let start_x = -game_board_width;
+    let start_y = -game_board_height;
 
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor( 0xffffff, 1);
@@ -41,7 +45,7 @@
     camera.position.y = 10;
 
     // Load realistic lighting
-    directionalLight = new THREE.DirectionalLight(0xffff, 100);
+    directionalLight = new THREE.DirectionalLight(0xffff, 1);
     directionalLight.position.set(0, 1, 0);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
@@ -73,21 +77,52 @@
     }
 
     // Draw plane
+    /*
     var geometry = new THREE.PlaneGeometry( 12, 8, 8);
     var material = new THREE.MeshBasicMaterial( {color: '#FFEAB3', side: THREE.DoubleSide} );
     var plane = new THREE.Mesh( geometry, material );
     scene.add( plane );
-    plane.rotateX(-Math.PI * 0.5);
+    plane.rotateX(-Math.PI * 0.5); 
+    */
+
+    // Draw grid
+    const floor = new THREE.TextureLoader().load('tank-battles/textures/iron_block.png');
+    let square = new THREE.PlaneGeometry(1, 1, 1);
+    let material = new THREE.MeshBasicMaterial({map: floor, side: THREE.DoubleSide});
+    let plane = new THREE.Mesh(square, material);
+    // let merged_squares = new THREE.BufferGeometry();
+    // let merged_squares = new THREE.InstancedMesh();
+    let squares = [];
+    for(x = start_x; x < game_board_width; x++){
+      for(y = start_y; y < game_board_height; y++){
+        let new_square = plane.clone();
+        squares.push(new_square);
+        scene.add(new_square);
+        new_square.position.x = x;
+        new_square.position.z = y;
+        new_square.rotateX(-Math.PI * 0.5);
+       // merged_squares.push(new_square);
+      }
+    }
+
+    // scene.add(plane);
+    // plane.rotateX(-Math.PI * 0.5); 
+    // plane.position.x = x;
+    // plane.position.z = y;
+    /*
+    grid = new THREE.GridHelper(12, 8, 8);
+    scene.add(grid);
+    */
 
     // Draw tank  
     let tank = new THREE.Object3D();
     loader.load(
       // resource URL
-      'tank-battles/models/simple_tank/scene.gltf',
+      'tank-battles/models/low-poly_tank/scene.gltf',
       // called when the resource is loaded
       function ( gltf ) {
         tank = gltf.scene.children[0];
-        tank.scale.set(0.05, 0.05, 0.05);
+        tank.scale.set(0.5, 0.5, 0.5);
         scene.add( gltf.scene );
         gltf.animations; // Array<THREE.AnimationClip>
         gltf.scene; // THREE.Group
@@ -106,9 +141,11 @@
     );
 
     // Orbit controls
+    /*
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target = new THREE.Vector3(0, 0, -10);
     controls.addEventListener('change', render);
+    */
 
     // Player controls
     let w, a, s, d, e;
@@ -193,11 +230,18 @@
     function update(){
       cubeControls();
       bullets.forEach(updateBullet);
+      camera.lookAt(tank.position.x, tank.position.y, tank.position.z);
     }
 
     // Draw scene
     function render(){
       renderer.render(scene, camera);
+    }
+
+    function onWindowResize(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     // Run game loop (update, render, repeat)
@@ -207,6 +251,8 @@
       render();
     }
     gameloop();
+
+    window.addEventListener('resize', onWindowResize, false);
   </script>
 </body>
 </html>
